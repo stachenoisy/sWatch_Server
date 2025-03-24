@@ -13,6 +13,27 @@ export const videosRoutes = (app: Elysia, token: string) =>
             };
         
             const response = await fetch(`https://api.themoviedb.org/3/${params.type}/${params.id}?language=${params.lang}`, options);
+
+            const isFirstValid = response.ok;
+
+            if (!isFirstValid) { return error(404); }
+
+            const videosResponse = await fetch(`https://api.themoviedb.org/3/${params.type}/${params.id}/videos?language=${params.lang}`, options);
+
+            if (videosResponse.ok) {
+                const videos = await videosResponse.json();
+                if (videos.results.length != 0) { 
+                    const result = videos.results.find((video: any) => video.type === 'Trailer');
+
+                    if (result) { 
+                        let tempData = await response.json();
+                        tempData.videoid = result.key
+        
+                        return { ...tempData };
+                    }
+                }
+            }
+
             return response.json() ?? error(404);
         }, {
             params: t.Object({
